@@ -75,8 +75,37 @@ foreach ($photos as $index => $photoPath) {
     $pos = $photoPositions[$index];
     
     // Resize photo to fit template slot
-    $resized = imagecreatetruecolor($pos['width'], $pos['height']);
-    imagecopyresampled($resized, $photo, 0, 0, 0, 0, $pos['width'], $pos['height'], $photoW, $photoH);
+    $destW = (int)$pos['width'];
+    $destH = (int)$pos['height'];
+
+    $srcRatio  = $photoW / $photoH;
+    $destRatio = $destW / $destH;
+
+    if ($srcRatio > $destRatio) {
+        // Source is wider → crop left/right
+        $cropH = $photoH;
+        $cropW = (int)($photoH * $destRatio);
+        $srcX = (int)(($photoW - $cropW) / 2);
+        $srcY = 0;
+    } else {
+        // Source is taller → crop top/bottom
+        $cropW = $photoW;
+        $cropH = (int)($photoW / $destRatio);
+        $srcX = 0;
+        $srcY = (int)(($photoH - $cropH) / 2);
+    }
+
+    $resized = imagecreatetruecolor($destW, $destH);
+
+    imagecopyresampled(
+        $resized,
+        $photo,
+        0, 0,
+        $srcX, $srcY,
+        $destW, $destH,
+        $cropW, $cropH
+);
+
     
     // Paste onto template (round coordinates to integers)
     imagecopy($collage, $resized, (int)$pos['x'], (int)$pos['y'], 0, 0, $pos['width'], $pos['height']);
